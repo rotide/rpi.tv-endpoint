@@ -58,14 +58,11 @@ class Player(object):
             print(stderror)
 
     def stop(self):
-        if self.pid is not None:
-            #os.system('kill ' + str(self.pid))
+        if self.is_playing()
             os.system('killall -9 omxplayer')
             os.system('killall -9 omxplayer.bin')
             self.player_state = 'STOP'
             self.player = None
-            self.pid = None
-            print('Stopped')
 
     def reg_check(self):
         if self.uuid == None or self.key == None:
