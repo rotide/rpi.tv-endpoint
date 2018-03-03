@@ -1,9 +1,7 @@
 import requests
 import json
 
-#def checkin(server, port, name, uuid, key, state):
 def checkin(server, port, name, uuid, key, state, channel, video):
-    #data = {'uuid':uuid, 'key':key, 'state':state, 'name':name}
     data = {'uuid':uuid, 'key':key, 'state':state, 'name':name, 'channel':channel, 'video':video}
     data_json = json.dumps(data)
 
@@ -13,5 +11,6 @@ def checkin(server, port, name, uuid, key, state, channel, video):
     try:
         response = requests.post(url, data=data_json, headers=headers)
         return response.status_code
-    except:
-        return None
+    except Exception as e:
+        print('EXCEPTION: checkin(): %s' % str(e))
+        return -1

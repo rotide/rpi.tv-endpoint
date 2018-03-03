@@ -1,7 +1,6 @@
-import time, sys
+import time, sys, subprocess
 from modules.registration import register, writekey
 from modules.checkin import checkin
-#from modules.statecheck import statecheck
 from modules.checkout import checkout
 
 class Player(object):
@@ -24,10 +23,13 @@ class Player(object):
     desired_channel = None
     queued_video = None
 
-    # Epoch of last checkin
-    last_checkin = None
+    # Epoch of last checkin attempt
+    last_checkin_attempt = None
 
-    #def __init__(self, server, port, name, uuid, key, keyfile):
+    # Variable to hold Video Player object
+    player = None
+    pid = None
+
     def __init__(self, Config):
         self.server = Config.SERVER
         self.port = Config.PORT
@@ -35,7 +37,37 @@ class Player(object):
         self.uuid = Config.UUID
         self.key = Config.KEY
         self.keyfile = Config.KEYFILE
-        self.last_checkin = 0
+        self.last_checkin_attempt = 0
+
+    def is_playing(self):
+        if self.player is not None and self.player.poll() is None:
+            # Video is playing (poll() returned no exit code)
+            return True
+        else:
+            return False
+
+    def play(self, v):
+        # Original subprocess creation from OLD script.
+        # - self.player = subprocess.Popen(['omxplayer', '-b', '-o', 'hdmi', v, '>', '/dev/null', '2>&1'])
+        #self.player = subprocess.Popen(['omxplayer', '-b', '-o', 'hdmi', v], shell=False)
+        self.player = subprocess.Popen(['ffplay', '/home/rotide/media/tv/mtv/Young.Sheldon.S01E01.720p.HDTV.X264-DIMENSION.mkv'])
+        self.pid = self.player.pid
+        print('Playing: ' + str(self.player.pid))
+
+    def pause(self):
+        if self.is_playing():
+            stdout, stderror = self.player.communicate(input='p')
+            print(stdout)
+            print(stderror)
+
+    def stop(self):
+        if self.pid is not None:
+            os.system('kill ' + str(self.pid))
+            #os.system('killall -9 omxplayer')
+            #os.system('killall -9 omxplayer.bin')
+            self.player = None
+            self.pid = None
+            print('Stopped')
 
     def reg_check(self):
         if self.uuid == None or self.key == None:
@@ -59,36 +91,16 @@ class Player(object):
         return False
 
     def checkin(self):
-#        status_code = checkin(self.server, self.port, self.name,
-#                              self.uuid, self.key, self.player_state)
+        self.last_checkin_attempt = time.time()
 
         status_code = checkin(self.server, self.port, self.name,
                               self.uuid, self.key, self.player_state,
                               self.desired_channel, self.queued_video)
 
         if status_code is 202:
-            self.last_checkin = time.time()
             return True
         else:
-            print(' [*] Checkin Failed: %i', status_code)
-            return False
-
-    def set_state(self, s):
-        self.state = s
-
-    def statecheck_old(self):
-        status_code, desired_state = statecheck(self.server,
-                                                self.port,
-                                                self.uuid)
-
-        if status_code == 200:
-            if self.desired_state != desired_state:
-                print('  -  State Change: %s -> %s' %(str(self.desired_state),
-                                                      str(desired_state)))
-                self.desired_state = desired_state
-            return True
-        else:
-            print(' [*] Checkin Failed: %i', status_code)
+            print(' [E] Checkin Failed: %i' % int(status_code))
             return False
 
     def checkout(self):
@@ -101,17 +113,24 @@ class Player(object):
             d_c = state_json[self.uuid]['desired_channel']
             q_v = state_json[self.uuid]['queued_video']
 
+            # Check Desired State - Set if changed
             if self.desired_state != d_s:
                 print(' [i] State Change: %s -> %s' %(str(self.desired_state),
                                                       str(d_s)))
                 self.desired_state = d_s
 
+            # Check Desired Channel - Set if changed
             if self.desired_channel != d_c:
                 print(' [i] Channel Change: %s -> %s' %(str(self.desired_channel),
                                                         str(d_c)))
                 self.desired_channel = d_c
 
+            # Check Queued Video - Set if changed
             if self.queued_video != q_v:
                 print(' [i] Queued Video Change: %s -> %s' %(str(self.queued_video),
                                                              str(q_v)))
                 self.queued_video = q_v
+            return True
+        else:
+            print(' [E] Checkout Failed: %i' % int(status_code))
+            return False

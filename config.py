@@ -21,4 +21,4 @@ class Config(object):
     UUID, KEY = readKeyFile(KEYFILE)
     SERVER = '10.0.0.100'
     PORT = 5000
-    NAME = "Test-LivingRoom"
+    NAME = "Test-Basement"
