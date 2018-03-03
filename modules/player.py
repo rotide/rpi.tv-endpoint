@@ -1,4 +1,4 @@
-import time, sys, subprocess
+import os, time, sys, subprocess
 from modules.registration import register, writekey
 from modules.checkin import checkin
 from modules.checkout import checkout
@@ -28,7 +28,6 @@ class Player(object):
 
     # Variable to hold Video Player object
     player = None
-    pid = None
 
     def __init__(self, Config):
         self.server = Config.SERVER
@@ -49,9 +48,8 @@ class Player(object):
     def play(self, v):
         # Original subprocess creation from OLD script.
         # - self.player = subprocess.Popen(['omxplayer', '-b', '-o', 'hdmi', v, '>', '/dev/null', '2>&1'])
-        self.player = subprocess.Popen(['omxplayer', '-b', '-o', 'hdmi', v], shell=False)
-        self.pid = self.player.pid
-        print('Playing: ' + str(self.player.pid))
+        self.player = subprocess.Popen(['omxplayer', '-b', '-o', 'hdmi', v, '>', '/dev/null', '2>&1']], shell=False)
+        print('Spawned PID: ' + str(self.player.pid))
 
     def pause(self):
         if self.is_playing():
@@ -61,9 +59,10 @@ class Player(object):
 
     def stop(self):
         if self.pid is not None:
-            os.system('kill ' + str(self.pid))
-            #os.system('killall -9 omxplayer')
-            #os.system('killall -9 omxplayer.bin')
+            #os.system('kill ' + str(self.pid))
+            os.system('killall -9 omxplayer')
+            os.system('killall -9 omxplayer.bin')
+            self.player_state = 'STOP'
             self.player = None
             self.pid = None
             print('Stopped')
