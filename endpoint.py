@@ -27,10 +27,10 @@ def main():
 
         time.sleep(.1)
 
-        if p.is_playing():
+        if p.desired_state == 'PLAY':
+            p.play('/mnt/media/tv/mtv/Young.Sheldon.S01E01.720p.HDTV.X264-DIMENSION.mkv')
+        if p.desired_state == 'STOP':
             p.stop()
-        else:
-            p.play('/home/rotide/media/tv/mtv/Young.Sheldon.S01E01.720p.HDTV.X264-DIMENSION.mkv')
 
 if __name__ == '__main__':
     main()

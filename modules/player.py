@@ -49,8 +49,7 @@ class Player(object):
     def play(self, v):
         # Original subprocess creation from OLD script.
         # - self.player = subprocess.Popen(['omxplayer', '-b', '-o', 'hdmi', v, '>', '/dev/null', '2>&1'])
-        #self.player = subprocess.Popen(['omxplayer', '-b', '-o', 'hdmi', v], shell=False)
-        self.player = subprocess.Popen(['ffplay', '/home/rotide/media/tv/mtv/Young.Sheldon.S01E01.720p.HDTV.X264-DIMENSION.mkv'])
+        self.player = subprocess.Popen(['omxplayer', '-b', '-o', 'hdmi', v], shell=False)
         self.pid = self.player.pid
         print('Playing: ' + str(self.player.pid))
 
