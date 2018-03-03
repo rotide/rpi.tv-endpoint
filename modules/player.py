@@ -48,7 +48,7 @@ class Player(object):
     def play(self, v):
         # Original subprocess creation from OLD script.
         # - self.player = subprocess.Popen(['omxplayer', '-b', '-o', 'hdmi', v, '>', '/dev/null', '2>&1'])
-        self.player = subprocess.Popen(['omxplayer', '-b', '-o', 'hdmi', v, '>', '/dev/null', '2>&1']], shell=False)
+        self.player = subprocess.Popen(['omxplayer', '-b', '-o', 'hdmi', v, '>', '/dev/null', '2>&1'], shell=False)
         print('Spawned PID: ' + str(self.player.pid))
 
     def pause(self):
