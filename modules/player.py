@@ -19,11 +19,13 @@ class Player(object):
     player_state = 'STOP'
     player_channel = None
     player_video = None
+    player_video_path = None
     # Desired States: STOP, PLAY, PAUSE
     # Desired state of the player (remote control)
     desired_state = None
     desired_channel = None
     queued_video = None
+    queued_video_path = None
 
     # Epoch of last checkin attempt
     last_checkin_attempt = None
@@ -67,6 +69,12 @@ class Player(object):
     def get_queued_video(self):
         return self.queued_video
 
+    def set_queued_video_path(self, p):
+        self.queued_video_path = p
+
+    def get_queued_video_path(self):
+        return self.queued_video_path
+
     def is_playing(self):
         if self.player is not None and self.player.poll() is None:
             # Video is playing (poll() returned no exit code)
@@ -78,7 +86,7 @@ class Player(object):
         # Original subprocess creation from OLD script.
         # - self.player = subprocess.Popen(['omxplayer', '-b', '-o', 'hdmi', v, '>', '/dev/null', '2>&1'])
 
-        self.player = subprocess.Popen(['omxplayer', '-b', '-o', 'hdmi', self.get_video(), '>', '/dev/null', '2>&1'], shell=False)
+        self.player = subprocess.Popen(['omxplayer', '-b', '-o', 'hdmi', self.get_video_path(), '>', '/dev/null', '2>&1'], shell=False)
         print('Spawned PID: ' + str(self.player.pid))
         self.set_state('PLAY')
 
@@ -150,6 +158,7 @@ class Player(object):
             d_s = state_json[self.uuid]['desired_state']
             d_c = state_json[self.uuid]['desired_channel']
             q_v = state_json[self.uuid]['queued_video']
+            q_vp = state_json[self.uuid]['queued_video_path']
 
             # Check Desired State - Set if changed
             if self.desired_state != d_s:
@@ -168,6 +177,7 @@ class Player(object):
                 print(' [i] Queued Video Change: %s -> %s' %(str(self.queued_video),
                                                              str(q_v)))
                 self.queued_video = q_v
+                self.set_queued_video_path(q_vp)
             return True
         else:
             print(' [E] Checkout Failed: %i' % int(status_code))
@@ -181,6 +191,7 @@ class Player(object):
             self.stop()
             self.set_channel(self.get_desired_channel())
             self.set_video(self.get_queued_video())
+            self.set_video_path(self.set_queued_video_path())
             if self.get_desired_state() == 'PLAY':
                 self.play()
 
@@ -201,4 +212,5 @@ class Player(object):
             elif self.get_desired_state() == 'SKIP':
                 self.stop()
                 self.set_video(self.get_queued_video())
+                self.set_video_path(self.set_queued_video_path())
                 self.play()
