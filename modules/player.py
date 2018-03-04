@@ -14,9 +14,11 @@ class Player(object):
     key = None
     name = None
 
-    # Player States: STOPPED, PLAYING, PAUSED, ERROR
+    # Player States: STOP, PLAY, PAUSE, ERROR
     # Current state of the player.
-    player_state = 'STOPPED'
+    player_state = 'STOP'
+    player_channel = None
+    player_video = None
     # Desired States: STOP, PLAY, PAUSE
     # Desired state of the player (remote control)
     desired_state = None
@@ -38,6 +40,33 @@ class Player(object):
         self.keyfile = Config.KEYFILE
         self.last_checkin_attempt = 0
 
+    def set_state(self, s):
+        self.player_state = s
+
+    def get_state(self):
+        return self.player_state
+
+    def set_channel(self, c):
+        self.player_channel = c
+
+    def get_channel(self):
+        return self.player_channel
+
+    def set_video(self, v):
+        self.player_video = v
+
+    def get_video(self):
+        return self.player_video
+
+    def get_desired_state(self):
+        return self.desired_state
+
+    def get_desired_channel(self):
+        return self.desired_channel
+
+    def get_queued_video(self):
+        return self.queued_video
+
     def is_playing(self):
         if self.player is not None and self.player.poll() is None:
             # Video is playing (poll() returned no exit code)
@@ -45,23 +74,37 @@ class Player(object):
         else:
             return False
 
-    def play(self, v):
+    def play(self):
         # Original subprocess creation from OLD script.
         # - self.player = subprocess.Popen(['omxplayer', '-b', '-o', 'hdmi', v, '>', '/dev/null', '2>&1'])
-        self.player = subprocess.Popen(['omxplayer', '-b', '-o', 'hdmi', v, '>', '/dev/null', '2>&1'], shell=False)
+
+        self.player = subprocess.Popen(['omxplayer', '-b', '-o', 'hdmi', self.get_video(), '>', '/dev/null', '2>&1'], shell=False)
         print('Spawned PID: ' + str(self.player.pid))
+        self.set_state('PLAY')
 
     def pause(self):
         if self.is_playing():
             stdout, stderror = self.player.communicate(input='p')
+
             print(stdout)
             print(stderror)
 
+            self.set_state('PAUSE')
+
+    def unpause(self):
+        if self.is_playing():
+            stdout, stderror = self.player.communicate(input='p')
+
+            print(stdout)
+            print(stderror)
+
+            self.set_state('PLAY')
+
     def stop(self):
-        if self.is_playing()
+        if self.is_playing():
             os.system('killall -9 omxplayer')
             os.system('killall -9 omxplayer.bin')
-            self.player_state = 'STOP'
+            self.set_state('STOP')
             self.player = None
 
     def reg_check(self):
@@ -110,13 +153,13 @@ class Player(object):
 
             # Check Desired State - Set if changed
             if self.desired_state != d_s:
-                print(' [i] State Change: %s -> %s' %(str(self.desired_state),
+                print(' [i] Desired State Change: %s -> %s' %(str(self.desired_state),
                                                       str(d_s)))
                 self.desired_state = d_s
 
             # Check Desired Channel - Set if changed
             if self.desired_channel != d_c:
-                print(' [i] Channel Change: %s -> %s' %(str(self.desired_channel),
+                print(' [i] Desired Channel Change: %s -> %s' %(str(self.desired_channel),
                                                         str(d_c)))
                 self.desired_channel = d_c
 
@@ -129,3 +172,33 @@ class Player(object):
         else:
             print(' [E] Checkout Failed: %i' % int(status_code))
             return False
+
+    def process(self):
+        # NEED: Module: Get Channel Name (map channel_id to channel name via API
+
+        # Handle Channel change request
+        if self.get_channel() != self.get_desired_channel():
+            self.stop()
+            self.set_channel(self.get_desired_channel())
+            self.set_video(self.get_queued_video())
+            if self.get_desired_state() == 'PLAY':
+                self.play()
+
+        if self.get_state() != self.get_desired_state():
+            if self.get_desired_state() == 'STOP':
+                if self.is_playing():
+                    self.stop()
+            elif self.get_desired_state() == 'PLAY':
+                if self.get_state() == 'PAUSE':
+                    if self.is_playing():
+                        self.unpause()
+                else:
+                    if not self.is_playing():
+                        self.play()
+            elif self.get_desired_state() == 'PAUSE':
+                if self.is_playing():
+                    self.pause()
+            elif self.get_desired_state() == 'SKIP':
+                self.stop()
+                self.set_video(self.get_queued_video())
+                self.play()

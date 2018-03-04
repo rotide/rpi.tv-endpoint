@@ -25,12 +25,21 @@ def main():
                 print(' [E] Communication Error. Trying again in %i seconds.' % delay)
                 errors = True
 
+            # If no errors, process checkin/checkout directives (play, stop, skip, etc)
+            if not errors:
+                p.process()
+
+        # Slight delay to drop CPU usage
         time.sleep(.1)
 
-        if not p.is_playing() and p.desired_state == 'PLAY':
-            p.play('/mnt/media/tv/mtv/Young.Sheldon.S01E01.720p.HDTV.X264-DIMENSION.mkv')
-        if p.desired_state == 'STOP' and p.is_playing():
-            p.stop()
+        #if not p.is_playing() and p.desired_state == 'PLAY':
+        #    p.play('/mnt/media/tv/mtv/Young.Sheldon.S01E01.720p.HDTV.X264-DIMENSION.mkv')
+        #if p.desired_state == 'STOP' and p.is_playing():
+        #    p.stop()
 
 if __name__ == '__main__':
     main()
+
+# To get OMXPLAYER playing without permissions issues
+# - echo 'SUBSYSTEM=="vchiq",GROUP="video",MODE="0660"' > /etc/udev/rules.d/10-vchiq-permissions.rules
+# - usermod -a -G video YourUnprivilegedUser
