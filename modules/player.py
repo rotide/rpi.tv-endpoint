@@ -197,7 +197,7 @@ class Player(object):
             self.stop()
             self.set_channel(self.get_desired_channel())
             self.set_video(self.get_queued_video())
-            self.set_video_path(self.set_queued_video_path())
+            self.set_video_path(self.get_queued_video_path())
             if self.get_desired_state() == 'PLAY':
                 self.play()
 
@@ -218,5 +218,5 @@ class Player(object):
             elif self.get_desired_state() == 'SKIP':
                 self.stop()
                 self.set_video(self.get_queued_video())
-                self.set_video_path(self.set_queued_video_path())
+                self.set_video_path(self.get_queued_video_path())
                 self.play()
