@@ -147,7 +147,7 @@ class Player(object):
 
         status_code = checkin(self.server, self.port, self.name,
                               self.uuid, self.key, self.player_state,
-                              self.desired_channel, self.queued_video)
+                              self.desired_channel, self.player_video)
 
         if status_code is 202:
             return True
