@@ -60,6 +60,12 @@ class Player(object):
     def get_video(self):
         return self.player_video
 
+    def set_video_path(self, p):
+        self.player_video_path = p
+
+    def get_video_path(self):
+        return self.player_video_path
+
     def get_desired_state(self):
         return self.desired_state
 
