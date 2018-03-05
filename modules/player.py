@@ -220,3 +220,13 @@ class Player(object):
                 self.set_video(self.get_queued_video())
                 self.set_video_path(self.get_queued_video_path())
                 self.play()
+        else:
+            if self.get_state() == 'PLAY' and self.get_desired_state() == 'PLAY':
+                if self.player.poll() is None:
+                    # Video is playing normally
+                    pass
+                elif self.player.poll() == 0:
+                    # Video ended normally
+                    self.set_video(self.get_queued_video())
+                    self.set_video_path(self.get_queued_video_path())
+                    self.play()
