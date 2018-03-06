@@ -1,4 +1,5 @@
-import os, time, sys, subprocess
+import os, time, sys
+from subprocess import Popen, PIPE, STDOUT
 from modules.registration import register, writekey
 from modules.checkin import checkin
 from modules.checkout import checkout
@@ -92,26 +93,24 @@ class Player(object):
         # Original subprocess creation from OLD script.
         # - self.player = subprocess.Popen(['omxplayer', '-b', '-o', 'hdmi', v, '>', '/dev/null', '2>&1'])
 
-        self.player = subprocess.Popen(['omxplayer', '-b', '-o', 'hdmi', self.get_video_path(), '>', '/dev/null', '2>&1'], shell=False)
-        print('Spawned PID: ' + str(self.player.pid))
+        self.player = Popen(
+            ['omxplayer', '-b', '-o', 'hdmi', self.get_video_path()], stdin=PIPE, shell=False)
         self.set_state('PLAY')
 
     def pause(self):
         if self.is_playing():
-            stdout, stderror = self.player.communicate(input='p')
-
-            print(stdout)
-            print(stderror)
-
+            # OMXPlayer expects a 'p' sent to it to [un]pause
+            self.player.stdin.write(b'p')
+            # Flush STDIN to free process and prevent Popen from hanging
+            self.player.stdin.flush()
             self.set_state('PAUSE')
 
     def unpause(self):
         if self.is_playing():
-            stdout, stderror = self.player.communicate(input='p')
-
-            print(stdout)
-            print(stderror)
-
+            # OMXPlayer expects a 'p' sent to it to [un]pause
+            self.player.stdin.write(b'p')
+            # Flush STDIN to free process and prevent Popen from hanging
+            self.player.stdin.flush()
             self.set_state('PLAY')
 
     def stop(self):
@@ -194,6 +193,7 @@ class Player(object):
 
         # Handle Channel change request
         if self.get_channel() != self.get_desired_channel():
+            print(' [i] Player: CHANNEL CHANGE')
             self.stop()
             self.set_channel(self.get_desired_channel())
             self.set_video(self.get_queued_video())
@@ -204,22 +204,28 @@ class Player(object):
         if self.get_state() != self.get_desired_state():
             if self.get_desired_state() == 'STOP':
                 if self.is_playing():
+                    print(' [i] Player: STOP')
                     self.stop()
             elif self.get_desired_state() == 'PLAY':
                 if self.get_state() == 'PAUSE':
                     if self.is_playing():
+                        print(' [i] Player: UNPAUSE')
                         self.unpause()
                 else:
                     if not self.is_playing():
+                        print(' [i] Player: PLAY')
                         self.play()
             elif self.get_desired_state() == 'PAUSE':
                 if self.is_playing():
+                    print(' [i] Player: PAUSE')
                     self.pause()
-            elif self.get_desired_state() == 'SKIP':
+            elif self.get_desired_state() == 'SKIP' and self.get_state() != 'SKIP':
+                print(' [i] Player: SKIP')
                 self.stop()
                 self.set_video(self.get_queued_video())
                 self.set_video_path(self.get_queued_video_path())
-                self.play()
+                self.set_state('SKIP')
+                #self.play()
         else:
             if self.get_state() == 'PLAY' and self.get_desired_state() == 'PLAY':
                 if self.player.poll() is None:
@@ -227,6 +233,7 @@ class Player(object):
                     pass
                 elif self.player.poll() == 0:
                     # Video ended normally
+                    print(' [i] Player: NEXT')
                     self.set_video(self.get_queued_video())
                     self.set_video_path(self.get_queued_video_path())
                     self.play()
