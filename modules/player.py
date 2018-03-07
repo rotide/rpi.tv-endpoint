@@ -15,13 +15,14 @@ class Player(object):
     key = None
     name = None
 
-    # Player States: STOP, PLAY, PAUSE, ERROR
+    # Player States: STOP, PLAY, PAUSE, SKIP, ERROR
     # Current state of the player.
     player_state = 'STOP'
     player_channel = None
     player_video = None
     player_video_path = None
-    # Desired States: STOP, PLAY, PAUSE
+    player_video_completed = None
+    # Desired States: STOP, PLAY, PAUSE, SKIP
     # Desired state of the player (remote control)
     desired_state = None
     desired_channel = None
@@ -82,6 +83,12 @@ class Player(object):
     def get_queued_video_path(self):
         return self.queued_video_path
 
+    def set_player_video_completed(self, v):
+        self.player_video_completed = v
+
+    def get_player_video_completed(self):
+        return self.player_video_completed
+
     def is_playing(self):
         if self.player is not None and self.player.poll() is None:
             # Video is playing (poll() returned no exit code)
@@ -96,6 +103,7 @@ class Player(object):
         self.player = Popen(
             ['omxplayer', '-b', '-o', 'hdmi', self.get_video_path()], stdin=PIPE, shell=False)
         self.set_state('PLAY')
+        print(' [i] Player: PLAY')
 
     def pause(self):
         if self.is_playing():
@@ -104,6 +112,7 @@ class Player(object):
             # Flush STDIN to free process and prevent Popen from hanging
             self.player.stdin.flush()
             self.set_state('PAUSE')
+            print(' [i] Player: PAUSE')
 
     def unpause(self):
         if self.is_playing():
@@ -112,6 +121,7 @@ class Player(object):
             # Flush STDIN to free process and prevent Popen from hanging
             self.player.stdin.flush()
             self.set_state('PLAY')
+            print(' [i] Player: UNPAUSE')
 
     def stop(self):
         if self.is_playing():
@@ -119,6 +129,7 @@ class Player(object):
             os.system('killall -9 omxplayer.bin')
             self.set_state('STOP')
             self.player = None
+            print(' [i] Player: STOP')
 
     def reg_check(self):
         if self.uuid == None or self.key == None:
@@ -146,9 +157,12 @@ class Player(object):
 
         status_code = checkin(self.server, self.port, self.name,
                               self.uuid, self.key, self.player_state,
-                              self.desired_channel, self.player_video)
+                              self.desired_channel, self.player_video,
+                              self.player_video_completed)
 
         if status_code is 202:
+            # Reset player_video_completed to None as it has been reported to the server.
+            self.set_player_video_completed(None)
             return True
         else:
             print(' [E] Checkin Failed: %i' % int(status_code))
@@ -204,24 +218,21 @@ class Player(object):
         if self.get_state() != self.get_desired_state():
             if self.get_desired_state() == 'STOP':
                 if self.is_playing():
-                    print(' [i] Player: STOP')
                     self.stop()
             elif self.get_desired_state() == 'PLAY':
                 if self.get_state() == 'PAUSE':
                     if self.is_playing():
-                        print(' [i] Player: UNPAUSE')
                         self.unpause()
                 else:
                     if not self.is_playing():
-                        print(' [i] Player: PLAY')
                         self.play()
             elif self.get_desired_state() == 'PAUSE':
                 if self.is_playing():
-                    print(' [i] Player: PAUSE')
                     self.pause()
             elif self.get_desired_state() == 'SKIP' and self.get_state() != 'SKIP':
                 print(' [i] Player: SKIP')
                 self.stop()
+                self.set_player_video_completed(self.get_video())
                 self.set_video(self.get_queued_video())
                 self.set_video_path(self.get_queued_video_path())
                 self.set_state('SKIP')
@@ -234,6 +245,7 @@ class Player(object):
                 elif self.player.poll() == 0:
                     # Video ended normally
                     print(' [i] Player: NEXT')
+                    self.set_player_video_completed(self.get_video())
                     self.set_video(self.get_queued_video())
                     self.set_video_path(self.get_queued_video_path())
                     self.play()

@@ -32,11 +32,6 @@ def main():
         # Slight delay to drop CPU usage
         time.sleep(.1)
 
-        #if not p.is_playing() and p.desired_state == 'PLAY':
-        #    p.play('/mnt/media/tv/mtv/Young.Sheldon.S01E01.720p.HDTV.X264-DIMENSION.mkv')
-        #if p.desired_state == 'STOP' and p.is_playing():
-        #    p.stop()
-
 if __name__ == '__main__':
     main()
 

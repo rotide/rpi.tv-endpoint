@@ -1,8 +1,14 @@
 import requests
 import json
 
-def checkin(server, port, name, uuid, key, state, channel, video):
-    data = {'uuid':uuid, 'key':key, 'state':state, 'name':name, 'channel':channel, 'video':video}
+def checkin(server, port, name, uuid, key, state, channel, video, completed_video):
+    data = {'uuid':uuid,
+            'key':key,
+            'state':state,
+            'name':name,
+            'channel':channel,
+            'video':video,
+            'completed_video':completed_video}
     data_json = json.dumps(data)
 
     url = 'http://' + str(server) + ':' + str(port) + '/api/endpoint/checkin'
