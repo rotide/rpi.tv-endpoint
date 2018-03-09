@@ -13,4 +13,4 @@ def checkout(server, port, uuid):
         return response.status_code, None
     except Exception as e:
         print('EXCEPTION: checkout(): %s' % str(e))
-        return -1
+        return -1, None

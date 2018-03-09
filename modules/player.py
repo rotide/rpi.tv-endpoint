@@ -1,5 +1,5 @@
 import os, time, sys
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE#, STDOUT
 from modules.registration import register, writekey
 from modules.checkin import checkin
 from modules.checkout import checkout
@@ -131,8 +131,24 @@ class Player(object):
             self.player = None
             print(' [i] Player: STOP')
 
+    def skip(self):
+        if self.is_playing():
+            self.stop()
+            self.set_player_video_completed(self.get_video())
+            self.set_video(self.get_queued_video())
+            self.set_video_path(self.get_queued_video_path())
+            self.set_state('SKIP')
+            print(' [i] Player: SKIP')
+
+    def play_next(self):
+        self.set_player_video_completed(self.get_video())
+        self.set_video(self.get_queued_video())
+        self.set_video_path(self.get_queued_video_path())
+        self.play()
+        print(' [i] Player: NEXT')
+
     def reg_check(self):
-        if self.uuid == None or self.key == None:
+        if self.uuid is None or self.key is None:
             print(' [*] Registration appears to be incomplete')
             print('  -  Registering device with server')
             success = self.register()
@@ -182,13 +198,13 @@ class Player(object):
             # Check Desired State - Set if changed
             if self.desired_state != d_s:
                 print(' [i] Desired State Change: %s -> %s' %(str(self.desired_state),
-                                                      str(d_s)))
+                                                              str(d_s)))
                 self.desired_state = d_s
 
             # Check Desired Channel - Set if changed
             if self.desired_channel != d_c:
                 print(' [i] Desired Channel Change: %s -> %s' %(str(self.desired_channel),
-                                                        str(d_c)))
+                                                                str(d_c)))
                 self.desired_channel = d_c
 
             # Check Queued Video - Set if changed
@@ -229,14 +245,15 @@ class Player(object):
             elif self.get_desired_state() == 'PAUSE':
                 if self.is_playing():
                     self.pause()
-            elif self.get_desired_state() == 'SKIP' and self.get_state() != 'SKIP':
-                print(' [i] Player: SKIP')
-                self.stop()
-                self.set_player_video_completed(self.get_video())
-                self.set_video(self.get_queued_video())
-                self.set_video_path(self.get_queued_video_path())
-                self.set_state('SKIP')
-                #self.play()
+            elif self.get_desired_state() == 'SKIP':# and self.get_state() != 'SKIP':
+                if self.is_playing():
+                    #print(' [i] Player: SKIP')
+                    #self.stop()
+                    #self.set_player_video_completed(self.get_video())
+                    #self.set_video(self.get_queued_video())
+                    #self.set_video_path(self.get_queued_video_path())
+                    #self.set_state('SKIP')
+                    self.skip()
         else:
             if self.get_state() == 'PLAY' and self.get_desired_state() == 'PLAY':
                 if self.player.poll() is None:
@@ -244,8 +261,9 @@ class Player(object):
                     pass
                 elif self.player.poll() == 0:
                     # Video ended normally
-                    print(' [i] Player: NEXT')
-                    self.set_player_video_completed(self.get_video())
-                    self.set_video(self.get_queued_video())
-                    self.set_video_path(self.get_queued_video_path())
-                    self.play()
+                    #print(' [i] Player: NEXT')
+                    #self.set_player_video_completed(self.get_video())
+                    #self.set_video(self.get_queued_video())
+                    #self.set_video_path(self.get_queued_video_path())
+                    #self.play()
+                    self.play_next()
